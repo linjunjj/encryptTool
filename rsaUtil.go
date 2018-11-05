@@ -2,8 +2,10 @@ package encryptTool
 
 import (
 	"crypto"
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
@@ -27,6 +29,8 @@ type Config struct {
 	PublicPath string
 	// pfx加密证书地址
 	EncryptCertPath string
+	//	加密采用的模式
+	Mode Hash
 }
 
 // 证书信息结构体
@@ -43,26 +47,30 @@ type Cert struct {
 	Public *rsa.PublicKey
 	// 加密公钥ID
 	EncryptId string
+	//	加密采用的模式
+	Mode Hash
 }
 
-
-
 func NewInstance(config *Config) *Cert {
+	if config.Mode == 0 {
+		panic("请输入验签模式")
+	}
+
 	if config.PfxPwd != "" && config.PfxPath != "" {
 		private, certdata, _ := parserPfxToCert(config.PfxPath, config.PfxPwd, config.IsDecode)
 		encryptCert, _ := parseCertificateFromFile(config.EncryptCertPath)
 		//certData.Public = certData.EncryptCert.PublicKey.(*rsa.PublicKey)
-
 		return &Cert{
+			Mode:        config.Mode,
 			Private:     private,
 			Cert:        certdata,
 			EncryptCert: encryptCert,
 		}
 	} else if config.PublicPath != "" && config.PrivatePath != "" {
 		private, _ := parsePrivateFromFile(config.PrivatePath)
-
 		public, _ := parsePublicFromFile(config.PublicPath)
 		return &Cert{
+			Mode:    config.Mode,
 			Private: private,
 			Public:  public,
 		}
@@ -71,8 +79,6 @@ func NewInstance(config *Config) *Cert {
 	}
 
 }
-
-
 
 // 根据PFX文件和密码来解析出里面包含的私钥(rsa)和证书(x509)
 func parserPfxToCert(path string, password string, isbase64decode bool) (private *rsa.PrivateKey, cert *x509.Certificate, err error) {
@@ -138,7 +144,7 @@ func parsePrivateFromFile(path string) (private *rsa.PrivateKey, err error) {
 	return
 }
 
-// 根据文件名解析出私钥 ,文件必须是rsa 公钥格式。
+// 根据文件名解析出公钥 ,文件必须是rsa 公钥格式。
 func parsePublicFromFile(path string) (private *rsa.PublicKey, err error) {
 	// Read the private key
 	pemData, err := ioutil.ReadFile(path)
@@ -213,20 +219,35 @@ func (c *Cert) EncryptData(data string) (res string, err error) {
 }
 
 // sign 做签
-func (c *Cert) SignDataBySha256(request map[string]string) (string, error) {
+func (c *Cert) SignData(request map[string]string) (signdata string, err error) {
 	str := mapSortByKey(request, "=", "&")
 	rng := rand.Reader
-	hashed := sha256.Sum256([]byte(fmt.Sprintf("%x", sha256.Sum256([]byte(str)))))
-	signer, err := rsa.SignPKCS1v15(rng, c.Private, crypto.SHA256, hashed[:])
-	if err != nil {
-		return "", err
+	var signer []byte
+	switch c.Mode {
+	case SHA256:
+		hashed := sha256.Sum256([]byte(fmt.Sprintf("%x", sha256.Sum256([]byte(str)))))
+		signer, err = rsa.SignPKCS1v15(rng, c.Private, crypto.SHA256, hashed[:])
+		if err != nil {
+			return "", err
+		}
+	case MD5:
+		hashed := md5.Sum([]byte(str))
+		signer, err = rsa.SignPKCS1v15(rng, c.Private, crypto.MD5, hashed[:])
+		if err != nil {
+			return "", err
+		}
+	case SHA1:
+		hashed := sha1.Sum([]byte(fmt.Sprintf("%x", sha1.Sum([]byte(str)))))
+		signer, err = rsa.SignPKCS1v15(rng, c.Private, crypto.SHA1, hashed[:])
+		if err != nil {
+			return "", err
+		}
 	}
 	return base64Encode(signer), nil
 }
 
-
 // 返回数据验签Sha256
-func (c *Cert) VerifyDataBySha256(vals url.Values) (res interface{}, err error) {
+func (c *Cert) VerifyData(vals url.Values) (res interface{}, err error) {
 	var signature string
 	kvs := map[string]string{}
 	for k := range vals {
@@ -253,5 +274,3 @@ func (c *Cert) VerifyDataBySha256(vals url.Values) (res interface{}, err error) 
 	}
 	return kvs, nil
 }
-
-
