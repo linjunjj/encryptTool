@@ -25,33 +25,33 @@ func StringToMap(data string) (dataS map[string]string) {
 }
 
 //获取当前年月日时分秒
-func getTrace() string {
+func GetTrace() string {
 	return time.Now().Format("20060102150405")
 }
 
 //获取当年年月日
-func getTimeFromymd() string {
+func GetTimeFromymd() string {
 	return time.Now().Format("20060102")
 }
 
 //获取当前时分秒
 
-func getTimeFromSec() string {
+func GetTimeFromSec() string {
 	return time.Now().Format("150405")
 }
 
 /**
   生成随机字符串
 */
-func randomString(lens int) string {
+func RandomString(lens int) string {
 	now := time.Now()
-	return makeMd5(strconv.FormatInt(now.UnixNano(), 10))[:lens]
+	return MakeMd5(strconv.FormatInt(now.UnixNano(), 10))[:lens]
 }
 
 /**
   字符串md5
 */
-func makeMd5(str string) string {
+func MakeMd5(str string) string {
 	h := md5.New()
 	io.WriteString(h, str)
 	s := fmt.Sprintf("%x", h.Sum(nil))
@@ -61,14 +61,14 @@ func makeMd5(str string) string {
 /**
   获取当前时间戳
 */
-func getNowSec() int64 {
+func GetNowSec() int64 {
 	return time.Now().Unix()
 }
 
 /**
   获取当前时间戳
 */
-func str2Sec(layout, str string) int64 {
+func Str2Sec(layout, str string) int64 {
 	tm2, _ := time.ParseInLocation(layout, str, time.Local)
 	return tm2.Unix()
 }
@@ -76,7 +76,7 @@ func str2Sec(layout, str string) int64 {
 /**
   获取当前时间
 */
-func sec2Str(layout string, sec int64) string {
+func Sec2Str(layout string, sec int64) string {
 	t := time.Unix(sec, 0)
 	nt := t.Format(layout)
 	return nt
