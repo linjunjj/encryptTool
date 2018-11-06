@@ -1,23 +1,23 @@
 package examples
 
 import (
+	"encryptTool"
 	"fmt"
-	"git.coding.net/greatLIU/sbt7-merchant-service/utils"
 )
 
 //加密数据 rsa加密
 func example() {
-
 	postData := make(map[string]string)
 	postData["tranCode"] = "T002"
 	postData["agentId"] = "加密的数据"
-
-	ras := new(utils.Config)
+	ras := new(encryptTool.Config)
 	ras.IsDecode = true
+	//采用rsawithmd5加密方式
+	ras.Mode = encryptTool.MD5
 	ras.PublicPath = "./cert/21502900_private_key_2048.pem"
 	ras.PrivatePath = "./cert/21502900_private_key_2048.pem"
-	a := utils.NewInstance(ras)
-	result, err := a.SignDataBySHA1(postData)
+	a := encryptTool.NewInstance(ras)
+	result, err := a.SignData(postData)
 	if err != nil {
 		fmt.Errorf("加密失败")
 	}
