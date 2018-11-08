@@ -6,7 +6,7 @@ import (
 )
 
 //加密数据 rsa加密
-func example() {
+func examples() {
 	postData := make(map[string]string)
 	postData["tranCode"] = "T002"
 	postData["agentId"] = "加密的数据"
