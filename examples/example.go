@@ -14,8 +14,8 @@ func examples() {
 	ras.IsDecode = true
 	//采用rsawithmd5加密方式
 	ras.Mode = encryptTool.MD5
-	ras.PublicPath = "./cert/21502900_private_key_2048.pem"
-	ras.PrivatePath = "./cert/21502900_private_key_2048.pem"
+	ras.PublicPath = "./cert/y_2048.pem"
+	ras.PrivatePath = "./cert/private_key_2048.pem"
 	a := encryptTool.NewInstance(ras)
 	result, err := a.SignData(postData)
 	if err != nil {
